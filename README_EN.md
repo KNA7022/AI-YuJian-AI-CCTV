@@ -1,40 +1,30 @@
-﻿<div align="center">
+<div align="center">
 
 # 🏸 AI-YuJian-AI · Feather-Eye
 
-### AI Badminton Hawk-Eye System — See every shot.
+### Turn badminton match video into court-aware replay data
 
-[![GitHub stars](https://img.shields.io/github/stars/lzylovec/AI-YuJian-AI?style=for-the-badge&logo=github&color=ffd33d)](https://github.com/lzylovec/AI-YuJian-AI/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/lzylovec/AI-YuJian-AI?style=for-the-badge&logo=github&color=58a6ff)](https://github.com/lzylovec/AI-YuJian-AI/network/members)
-[![License](https://img.shields.io/github/license/lzylovec/AI-YuJian-AI?style=for-the-badge&color=blueviolet)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.8%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey?style=for-the-badge)]()
-[![Open Source](https://img.shields.io/badge/Open%20Source-Apache%202.0-success?style=for-the-badge)]()
+[![GitHub](https://img.shields.io/badge/GitHub-lzylovec--AI--YuJian--AI-181717?style=flat-square&logo=github)](https://github.com/lzylovec/lzylovec-AI-YuJian-AI)
+[![Python](https://img.shields.io/badge/Python-3.8%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Web](https://img.shields.io/badge/Web-React%20%2B%20Vite-61DAFB?style=flat-square&logo=react&logoColor=111827)](web/frontend/)
+[![API](https://img.shields.io/badge/API-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](web/api/)
+[![License](https://img.shields.io/badge/License-Apache--2.0-2ea44f?style=flat-square)](LICENSE)
 
-**An open-source computer-vision toolkit for badminton match video analysis — your own Hawk-Eye.**
+**A local-first computer-vision toolkit for player pose, shuttlecock tracking, court mapping, and match replay analytics.**
 
-[中文](README.md) · [Quick Start](#-quick-start) · [Features](#-features) · [Preview](#-preview) · [Roadmap](#-roadmap)
+[中文](README.md) · [Quick Start](#-quick-start) · [Web Demo](#-web-demo) · [Preview](#-preview) · [Roadmap](#-roadmap)
 
 </div>
 
 ---
 
-## ✨ What is this?
+## ✨ Overview
 
-**AI-YuJian-AI** is an open-source match-analysis system built for amateur and competitive badminton.
-Feed it a match video, and it will:
+**AI-YuJian-AI** is designed for badminton training, match review, and computer-vision research. Feed it a match video, calibrate the four court corners once, and it produces annotated video, court trajectories, movement statistics, and structured detection data.
 
-- 🎯 **Player pose** — RTMPose / RTMO / YOLO Pose
-- 🪶 **Shuttlecock tracking** — YOLO detection + cross-frame tracking
-- 🗺️ **Court coordinate mapping** — manual 4-point annotation → standard court coordinates
-- 📊 **Motion stats** — distance, instant speed, max speed, rally count
-- 🔥 **Position heatmaps** — per-half heatmap & scatter plots
-- 🎬 **Annotated video** — skeleton / trajectory / stats / rally ID overlay
-- 🌐 **Bilingual** — `--language zh/en`
+The project provides two entry points: a Python CLI for direct analysis and a local Web Demo for upload, clipping, browser-based calibration, queued analysis, and artifact downloads.
 
-> The name **YuJian (羽见)** literally means *"see the feather"* — a play on words for *"see every shuttle"*.
-
----
+> **YuJian (羽见)** means “seeing every shuttle — and every movement.”
 
 ## 🎬 Preview
 
@@ -42,134 +32,59 @@ Feed it a match video, and it will:
 
 ![AI-YuJian-AI preview](assets/demo.gif)
 
-*Full demo video: [`assets/demo.mp4`](assets/demo.mp4)*
+*Full demo video: [assets/demo.mp4](assets/demo.mp4)*
 
 </div>
 
-### 📍 Position visualization
-
-| 🔥 Heatmap | 🎯 Scatter |
+| Player position heatmap | Player position scatter plot |
 | :---: | :---: |
-| ![Player position heatmap](assets/match_heatmap.png) | ![Player position scatter](assets/match_scatter.png) |
+| ![Player position heatmap](assets/match_heatmap.png) | ![Player position scatter plot](assets/match_scatter.png) |
 
----
+![Court calibration example](assets/label_court_example.png)
 
-## 🆕 Changelog
+## 🧭 Two ways to use it
 
-- **2026-07-31** · Renamed to **AI-YuJian-AI**, rewrote README.
-- **2026-06-20** · Initial open-source release.
-- **2026-06-17** · Documentation cleanup.
-- **Current** · Pose detection, shuttlecock detection, court mapping, trajectory stats, heatmaps, scatter plots, annotated video output.
-- **Experimental** · Hit-point analysis and stroke statistics are still under iteration — best for research & secondary development.
-
----
-
-## ✨ Features
-
-### 🧠 AI Vision
-- 🦴 **Player pose detection** — RTMPose, RTMO, Ultralytics YOLO Pose
-- 🪶 **Shuttlecock detection** — YOLO-based detector with trajectory overlay
-- 🗺️ **Court coordinate mapping** — 4-point manual annotation → standard court coordinates
-- 🧍 **Player tracking** — separate trajectories for upper-court and lower-court players
-- 🏸 **Rally detection** — auto-detect rally start/end from continuous court-view matching
-
-### 📊 Analytics
-- 📏 **Motion stats** — distance, instant speed, max speed, rally count
-- 🔥 **Position charts** — auto-generated heatmaps & scatter plots
-- 📁 **Structured export** — `metadata.json` + `detections.jsonl`
-
-### 🎨 UX
-- 🎬 **Annotated video output** — MP4 with skeleton / trajectory / stats / rally ID overlay
-- 🌐 **Bilingual UI** — `--language zh/en`
-- 🎛️ **Toggleable overlays** — ROI, skeleton, player trajectory, court trajectory, shuttle trajectory, stats
-- 🖥️ **Fully local** — no cloud, no upload
-
----
-
-## 🏗️ Architecture
-
-```text
-                       ┌──────────────────────────┐
-                       │  Input Video (MP4)       │
-                       └────────────┬─────────────┘
-                                    │
-              ┌─────────────────────┼─────────────────────┐
-              ▼                     ▼                     ▼
-    ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-    │ Pose Detection   │  │ Shuttle Detect   │  │ Court Annotation │
-    │ RTMPose/RTMO/YOLO│  │ YOLO (ball)      │  │ 4-point click    │
-    └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘
-             │                     │                     │
-             └─────────────────────┼─────────────────────┘
-                                   ▼
-                       ┌──────────────────────────┐
-                       │  Court Coordinate Map   │
-                       │  image → standard court  │
-                       └────────────┬─────────────┘
-                                    ▼
-                       ┌──────────────────────────┐
-                       │   Player Tracking &      │
-                       │   Rally Detection        │
-                       └────────────┬─────────────┘
-                                    ▼
-        ┌───────────────────┬───────┴────────┬────────────────────┐
-        ▼                   ▼                ▼                    ▼
-   ┌─────────┐       ┌──────────────┐  ┌────────────┐    ┌──────────────────┐
-   │  Stats  │       │ Annotated    │  │ Heatmap /  │    │ detections.jsonl │
-   │ panel   │       │ Video Output │  │ Scatter    │    │ metadata.json    │
-   └─────────┘       └──────────────┘  └────────────┘    └──────────────────┘
-```
-
----
+| Entry point | Best for | Start with |
+| :--- | :--- | :--- |
+| **Python CLI** | Single videos, parameter tuning, and scripts | `python main.py --video-path ...` |
+| **Local Web Demo** | Uploading, clipping, calibration, job history, and downloads | FastAPI `8000` + Vite `5173` |
 
 ## 🚀 Quick Start
 
-### 📋 Requirements
+### Requirements
 
-- **Python** 3.8+
-- **FFmpeg** in your `PATH`
-- **OpenCV / PyTorch / Ultralytics / RTMLib / ONNX Runtime**
-- Recommended: **NVIDIA GPU**. CPU works but is much slower.
+- Python 3.8+
+- FFmpeg available in `PATH`
+- NVIDIA GPU recommended; CPU is supported but considerably slower
+- The default dependency file installs CPU builds of PyTorch and ONNX Runtime
 
-### 📦 Install
+### Install
 
 ```bash
-git clone https://github.com/lzylovec/AI-YuJian-AI.git
-cd AI-YuJian-AI
+git clone https://github.com/lzylovec/lzylovec-AI-YuJian-AI.git
+cd lzylovec-AI-YuJian-AI
 
 python -m venv .venv
-# Windows
+
+# Windows PowerShell
 .\.venv\Scripts\activate
+
 # Linux / macOS
 source .venv/bin/activate
 
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 🎮 GPU acceleration (Windows / NVIDIA, optional)
+### Prepare model weights
 
-```powershell
-.\.venv\Scripts\activate
-
-pip uninstall -y torch torchvision onnxruntime onnxruntime-gpu
-pip install torch==2.5.1+cu121 torchvision==0.20.1+cu121 --index-url https://download.pytorch.org/whl/cu121
-pip install onnxruntime-gpu==1.20.1
-
-# Verify
-python -c "import torch; print('cuda:', torch.cuda.is_available())"
-python -c "import onnxruntime as ort; print(ort.get_available_providers())"
-# Expected: cuda: True and CUDAExecutionProvider
-```
-
-### 🧠 Model preparation
-
-Download the shuttlecock weights from [GitHub Releases](https://github.com/lzylovec/AI-YuJian-AI/releases):
+Shuttlecock weights are not committed to the repository. Download them from [GitHub Releases](https://github.com/lzylovec/lzylovec-AI-YuJian-AI/releases) and place them at:
 
 ```text
 weights/yolo11s-ball.pt
 ```
 
-Optional RTMPose / RTMO / YOLOX ONNX models:
+For `rtmpose` or `rtmo`, `rtmlib` can use the corresponding ONNX models on demand. You can also place them under `weights/`:
 
 ```text
 weights/yolox_nano_8xb8-300e_humanart-40f6f0d0.onnx
@@ -177,37 +92,102 @@ weights/rtmpose-s_simcc-body7_pt-body7_420e-256x192-acd4a1ef_20230504.onnx
 weights/rtmo-s_8xb32-600e_body7-640x640-dac2bf74_20231211.onnx
 ```
 
-> If the local ONNX files are missing, `rtmlib` will try to download them to your user cache.
+> With `--pose-family yolo-pose`, the default model name is `yolo11n-pose.pt`. Ultralytics can resolve or download it by name, or you can pass a local path with `--yolo-pose-model`.
 
-### ▶️ Run
+### Run the CLI
 
 ```bash
-# Basic
+# Analyze the included sample video with default settings
 python main.py --video-path videos/demo.mp4
 
-# Pose model selection
+# Select a pose model
 python main.py --video-path videos/demo.mp4 --pose-family rtmpose --pose-mode balanced
 python main.py --video-path videos/demo.mp4 --pose-family rtmo --pose-mode lightweight
 python main.py --video-path videos/demo.mp4 --pose-family yolo-pose --yolo-pose-model yolo11n-pose.pt
 
-# Language
+# English visualization text
 python main.py --video-path videos/demo.mp4 --language en
 ```
 
-#### First-run flow
+On the first run:
 
-1. Prepare the input video and the shuttlecock weights.
-2. Run the basic command. Without `--template-path`, a file picker appears — pick a clear court frame.
-3. The court-annotation window pops up. Click **4 corners in order: top-left → top-right → bottom-right → bottom-left**.
+1. Without `--template-path`, a file picker opens. Choose a frame where the court is clearly visible.
+2. In the calibration window, click **top-left → top-right → bottom-right → bottom-left**.
+3. The annotation is cached at `results/<video_name>/court_annotations.txt` and reused later.
 
-![Court annotation example](assets/label_court_example.png)
+If the camera view, crop, or template changes, delete the corresponding cache file and calibrate again.
 
-4. After the 4 clicks, a green court frame + blue pose-ROI frame appear.
-5. Annotations are cached at `results/<video_name>/court_annotations.txt` and reused on subsequent runs.
+## 🖥️ Web Demo
 
-> Changed camera / crop / template? Delete that file and re-annotate.
+The Web Demo is a local workbench. Uploaded videos are stored under local `storage/`, and analysis results are written to local `results/`; no cloud service is required.
 
----
+### Start the backend
+
+```bash
+pip install -r requirements.txt -r web-requirements.txt
+python -m web.api.run
+```
+
+Backend: <http://127.0.0.1:8000>
+
+### Start the frontend
+
+In another terminal, using the same virtual environment:
+
+```bash
+cd web/frontend
+npm install
+npm run dev
+```
+
+Frontend: <http://127.0.0.1:5173>
+
+The Web Demo supports:
+
+- Video upload and preview
+- Start/end clipping before analysis
+- Four-point court calibration in the browser
+- Queued, running, completed, and failed job states
+- Annotated video, heatmap, and scatter plot preview
+- Artifact downloads, local history, and task deletion
+
+## 🧠 Features
+
+### Vision pipeline
+
+- **Player pose detection** with RTMPose, RTMO, and Ultralytics YOLO Pose.
+- **Shuttlecock detection** with YOLO and cross-frame trajectory overlays.
+- **Court coordinate mapping** through four-point perspective transformation to standard court coordinates.
+- **Player tracking** with separate upper- and lower-court trajectories.
+- **Rally detection** based on continuous court-view segments, with rally IDs in overlays and records.
+
+### Results and analytics
+
+- **Motion statistics**: distance, instant speed, average speed, maximum speed, and rally count.
+- **Position plots**: player heatmaps and scatter plots.
+- **Configurable overlays**: pose ROI, skeletons, player trajectories, court trajectory, shuttle trajectory, and stats panel.
+- **Structured export**: `metadata.json`, `session_summary.json`, and per-frame `detections.jsonl`.
+- **Bilingual visualization** through `--language zh/en`.
+
+## 🏗️ Processing pipeline
+
+```text
+Match video
+    │
+    ├── Player pose detection (RTMPose / RTMO / YOLO Pose)
+    ├── Shuttlecock detection (YOLO)
+    └── Four-point court calibration
+           │
+           ▼
+    Perspective transform: image → standard court coordinates
+           │
+           ▼
+    Player tracking, rally detection, speed and distance statistics
+           │
+           ├── Annotated MP4
+           ├── Heatmap / scatter plot
+           └── JSON / JSONL structured data
+```
 
 ## ⚙️ Common options
 
@@ -215,120 +195,108 @@ python main.py --video-path videos/demo.mp4 --language en
 | :--- | :--- | :--- |
 | `--video-path` | Input video (required) | — |
 | `--output-dir` | Output directory | `results/<video_name>` |
-| `--ball-model` | Shuttlecock YOLO model | `weights/yolo11s-ball.pt` |
+| `--ball-model` | Shuttlecock model path | `weights/yolo11s-ball.pt` |
 | `--pose-family` | `rtmpose` / `rtmo` / `yolo-pose` | `rtmpose` |
 | `--pose-mode` | `lightweight` / `balanced` / `performance` | `balanced` |
-| `--yolo-pose-model` | YOLO pose model | `yolo11n-pose.pt` |
+| `--yolo-pose-model` | YOLO Pose path or model name | `yolo11n-pose.pt` |
 | `--template-path` | Court template image | file picker |
-| `--pose-roi` | Show pose-ROI frame | `true` |
 | `--display` | Show OpenCV preview | `true` |
-| `--skeletons` | Show skeletons | `true` |
-| `--player-trajectories` | Show player trajectories | `true` |
-| `--court-trajectory` | Show court trajectory overlay | `true` |
-| `--shuttlecock-trajectory` | Show shuttle trajectory | `true` |
+| `--skeletons` | Draw player skeletons | `true` |
+| `--player-trajectories` | Draw player trajectories | `true` |
+| `--court-trajectory` | Draw court trajectory | `true` |
+| `--shuttlecock-trajectory` | Draw shuttle trajectory | `true` |
 | `--player-stats` | Show player stats panel | `true` |
-| `--visualize-positions` | Generate heatmap & scatter | `true` |
+| `--visualize-positions` | Generate heatmap and scatter plot | `true` |
 | `--audio` | Keep original audio | `true` |
-| `--language` | `zh` / `en` | `zh` |
+| `--language` | Visualization language: `zh` / `en` | `zh` |
 | `--save-images` | Save per-frame images | `false` |
 | `--performance-stats` | Print performance timing | `false` |
 
----
+## 📦 Output
 
-## 📊 Output
-
-Default output to `results/<video_name>/`:
+The CLI writes to `results/<video_name>/` by default:
 
 ```text
 results/<video_name>/
-├── metadata.json                  # video / model / annotation / output meta
-├── detections.jsonl               # per-frame records (rally, players, hands, coords, speed, shuttle)
-├── detect_<video_name>.mp4        # MP4 with skeleton / trajectory / stats / rally ID overlay
-├── court_annotations.txt          # 4-point annotation cache
+├── metadata.json                  # video, model, calibration, and output metadata
+├── detections.jsonl               # per-frame detection records
+├── detect_<video_name>.mp4        # annotated video with overlays and stats
+├── court_annotations.txt          # CLI four-point calibration cache
 └── position_visualizations/
-    ├── heatmaps/                   # player position heatmaps
+    ├── heatmaps/                  # player position heatmaps
     └── scatter_plots/              # player position scatter plots
 ```
 
----
+Service mode additionally writes `session_summary.json` in the corresponding job directory with job status, summary statistics, and artifact indexes.
+
+Web Demo runtime files live under `storage/` and `results/web/`. These directories are ignored by Git.
 
 ## 🧩 Project structure
 
 ```text
 AI-YuJian-AI/
-├── main.py                       # CLI entry & arg parser
-├── badminton_analysis/
-│   ├── system.py                 # main analysis pipeline
-│   ├── service.py                # high-level service wrapper
-│   ├── court/                    # court annotation & coordinate mapping
+├── main.py                       # CLI entry point
+├── badminton_analysis/           # core video-analysis pipeline
+│   ├── court/                    # court calibration and mapping
 │   ├── data/                     # JSON / JSONL persistence
-│   ├── detection/                # shuttle & pose detection
-│   ├── media/                    # video / audio processing
+│   ├── detection/                # pose and shuttlecock detection
+│   ├── media/                    # video and audio processing
 │   ├── tracking/                 # player tracking
-│   ├── visualization/            # overlays, charts, position plots
-│   └── analysis/                 # rally & stats
-├── assets/                       # demo GIF / video / sample images
-├── videos/                       # input videos
-├── templates/                    # court template images
-├── results/                      # default output
-├── specs/                        # design docs
-└── weights/                      # model weights (downloaded at runtime)
+│   └── visualization/            # overlays and charts
+├── web/
+│   ├── api/                     # FastAPI job service
+│   └── frontend/                # React + Vite frontend
+├── assets/                      # demo GIF, video, and sample images
+├── templates/                   # court template images
+├── videos/                      # sample input videos
+├── specs/                       # design and requirements docs
+├── requirements.txt             # analysis dependencies
+└── web-requirements.txt         # Web backend dependencies
 ```
-
----
 
 ## 🔮 Roadmap
 
 - [x] Frame-by-frame badminton match video analysis
 - [x] RTMPose / RTMO / YOLO Pose support
 - [x] YOLO shuttlecock detection
-- [x] Manual court annotation & coordinate mapping
-- [x] Player trajectory / speed / distance / rally stats
-- [x] Bilingual visualization (zh / en)
-- [x] Heatmap, scatter plot, detection data export
+- [x] Manual court calibration and coordinate mapping
+- [x] Player trajectory, speed, distance, and rally statistics
+- [x] Heatmaps, scatter plots, and structured data export
+- [x] Local Web Demo for upload, calibration, queued analysis, and downloads
 - [ ] More stable hit-point recognition
 - [ ] More accurate shuttlecock detection
 - [ ] More complete stroke statistics
 - [ ] Automatic court keypoint detection
 - [ ] Batch video analysis workflow
 
----
-
 ## 🛠️ Tech stack
 
-<p align="left">
-  <img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white" />
-  <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=flat-square&logo=pytorch&logoColor=white" />
-  <img src="https://img.shields.io/badge/OpenCV-5C3EE8?style=flat-square&logo=opencv&logoColor=white" />
-  <img src="https://img.shields.io/badge/Ultralytics%20YOLO-111F68?style=flat-square" />
-  <img src="https://img.shields.io/badge/ONNX%20Runtime-005CED?style=flat-square" />
-  <img src="https://img.shields.io/badge/RTMPose-OpenMMLab-3A3A3A?style=flat-square" />
-  <img src="https://img.shields.io/badge/FFmpeg-007808?style=flat-square&logo=ffmpeg&logoColor=white" />
+<p>
+  <img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=flat-square&logo=pytorch&logoColor=white" alt="PyTorch" />
+  <img src="https://img.shields.io/badge/OpenCV-5C3EE8?style=flat-square&logo=opencv&logoColor=white" alt="OpenCV" />
+  <img src="https://img.shields.io/badge/Ultralytics%20YOLO-111F68?style=flat-square" alt="Ultralytics YOLO" />
+  <img src="https://img.shields.io/badge/ONNX%20Runtime-005CED?style=flat-square" alt="ONNX Runtime" />
+  <img src="https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB" alt="React" />
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/FFmpeg-007808?style=flat-square&logo=ffmpeg&logoColor=white" alt="FFmpeg" />
 </p>
-
----
 
 ## 🙏 Acknowledgements
 
-- [TrackNetV2](https://github.com/wywyWang/TrackNetV2) — shuttlecock dataset
-- [RTMPose](https://github.com/open-mmlab/mmpose) — human pose estimation
-- [Ultralytics YOLO](https://github.com/ultralytics/ultralytics) — detection ecosystem
-
----
+- [TrackNetV2](https://github.com/wywyWang/TrackNetV2): badminton dataset-related work
+- [RTMPose](https://github.com/open-mmlab/mmpose): human pose estimation
+- [Ultralytics YOLO](https://github.com/ultralytics/ultralytics): detection ecosystem
 
 ## 📄 License
 
-Project code and `weights/yolo11s-ball.pt` are released under **Apache License 2.0**.
-The RTMPose / RTMO / YOLOX ONNX weights shipped via Releases come from the OpenMMLab / RTMPose ecosystem
-and are distributed under their upstream Apache License 2.0, with original attributions preserved.
-
-See [LICENSE](LICENSE).
+Project code is released under the [Apache License 2.0](LICENSE). Model weights are not committed to this repository; follow the license and attribution requirements of each upstream project when downloading or redistributing them.
 
 ---
 
 <div align="center">
 
-If this project helps you, a ⭐ would mean a lot!
+If this project helps you, a ⭐ would be appreciated.
 
 **Made with ❤️ by [lzylovec](https://github.com/lzylovec)**
 
