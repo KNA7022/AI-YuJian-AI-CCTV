@@ -85,7 +85,13 @@ def process_video_with_audio(video_path, temp_video_path, output_path, save_dir)
                 "-i",
                 video_path,
                 "-c:v",
-                "copy",
+                "libx264",
+                "-preset",
+                "veryfast",
+                "-crf",
+                "20",
+                "-pix_fmt",
+                "yuv420p",
                 "-c:a",
                 "aac",
                 "-map",
@@ -93,6 +99,8 @@ def process_video_with_audio(video_path, temp_video_path, output_path, save_dir)
                 "-map",
                 "1:a",
                 "-shortest",
+                "-movflags",
+                "+faststart",
                 output_path,
             ],
             stderr=subprocess.DEVNULL,
@@ -119,7 +127,32 @@ def process_video_without_audio(temp_video_path, output_path):
         if not os.path.exists(temp_video_path):
             raise FileNotFoundError(f"Temporary video not found: {temp_video_path}")
 
-        shutil.copy2(temp_video_path, output_path)
+        result = subprocess.run(
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                temp_video_path,
+                "-c:v",
+                "libx264",
+                "-preset",
+                "veryfast",
+                "-crf",
+                "20",
+                "-pix_fmt",
+                "yuv420p",
+                "-an",
+                "-movflags",
+                "+faststart",
+                output_path,
+            ],
+            stderr=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            timeout=120,
+        )
+
+        if result.returncode != 0:
+            shutil.copy2(temp_video_path, output_path)
 
         if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
             raise RuntimeError("Output video was not created")

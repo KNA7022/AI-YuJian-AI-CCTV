@@ -7,9 +7,15 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .venv/
+.venv-web/
 venv/
 env/
 .agents/
+web/frontend/node_modules/
+web/frontend/dist/
+
+# Local runtime storage (jobs, uploads, sqlite db) — never published
+storage/
 
 # Local inputs and generated outputs
 results/

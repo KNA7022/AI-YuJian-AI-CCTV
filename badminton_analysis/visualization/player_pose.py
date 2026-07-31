@@ -3,8 +3,6 @@ import time
 import cv2
 import numpy as np
 
-from ..detection.rtmpose import RTMPoseProcessor
-
 
 class PlayerPoseVisualizer:
     """Detect, filter, and draw player pose keypoints."""
@@ -17,7 +15,9 @@ class PlayerPoseVisualizer:
         show_performance_stats=False,
         court_filter_margin=0.75,
     ):
-        self.rtmpose_processor = rtmpose_processor or RTMPoseProcessor()
+        if rtmpose_processor is None:
+            raise RuntimeError("A pose processor instance must be provided to PlayerPoseVisualizer.")
+        self.rtmpose_processor = rtmpose_processor
         self.show_skeletons = show_skeletons
         self.show_player_trajectories = show_player_trajectories
         self.show_performance_stats = show_performance_stats

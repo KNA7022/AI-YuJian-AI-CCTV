@@ -3,6 +3,8 @@ import json
 import numpy as np
 import pandas as pd
 import os
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.colors import LinearSegmentedColormap
@@ -10,7 +12,7 @@ import seaborn as sns
 from collections import defaultdict
 
 # 设置全局绘图风格为深色
-plt.style.use('dark_background')
+plt.style.use('default')
 
 class PlayerPositionVisualizer:
     """
@@ -60,11 +62,11 @@ class PlayerPositionVisualizer:
         self.heatmap_grid_size = (30, 60)  # Grid size (width grid count, length grid count)
         
         # Color settings - 调整为在深色背景中更醒目的颜色
-        self.upper_color = '#ff6363'  # Upper court player color (亮红色，在深色背景中更醒目)
-        self.lower_color = '#63c6ff'  # Lower court player color (亮蓝色，在深色背景中更醒目)
+        self.upper_color = '#d94b4b'
+        self.lower_color = '#1f76b4'
         
         # 场地线条颜色 - 深色主题
-        self.court_line_color = '#bbbbbb'  # 浅灰色，在深色背景中清晰可见
+        self.court_line_color = '#33443d'
         
     def _calculate_movement_stats(self, upper_df, lower_df, rally_segments, frames):
         """Calculate movement statistics for each rally (average speed, maximum speed, total distance)"""
@@ -482,7 +484,7 @@ class PlayerPositionVisualizer:
             
     def _generate_heatmap(self, upper_df, lower_df, filename):
         """Generate heatmap"""
-        plt.figure(figsize=(10, 16), facecolor='#1a1a1a')  # 设置深色背景
+        plt.figure(figsize=(10, 16), facecolor='#f8fbf8')  # 设置深色背景
         
         # 在深色背景中创建更好的颜色映射 - 从透明到鲜明的颜色
         upper_cmap = LinearSegmentedColormap.from_list("upper_cmap", [(0, 0, 0, 0), self.upper_color])
@@ -534,10 +536,10 @@ class PlayerPositionVisualizer:
         # Set plot properties - 适合深色背景的样式
         plt.xlim(0, self.court_width)
         plt.ylim(self.court_length, 0)  # Invert Y axis for correct orientation
-        plt.title('Player Position Heatmap', color='white', fontsize=14)
-        plt.xlabel('Court Width (meters)', color='white')
-        plt.ylabel('Court Length (meters)', color='white')
-        plt.tick_params(colors='white')  # 坐标轴刻度标签改为白色
+        plt.title('Player Position Heatmap', color='#101614', fontsize=14)
+        plt.xlabel('Court Width (meters)', color='#33443d')
+        plt.ylabel('Court Length (meters)', color='#33443d')
+        plt.tick_params(colors='#33443d')  # 坐标轴刻度标签改为白色
         
         # Save plot
         save_path = os.path.join(self.output_dir, 'heatmaps', filename)
@@ -632,12 +634,12 @@ class PlayerPositionVisualizer:
             if lower_speeds:
                 info_text += f"  Maximum Speed: {max(lower_speeds):.2f} m/s\n"
         
-        # 在图表中心右侧添加文本框，适合深色背景
+        # Add a light statistics panel that reads well in the web results page.
         plt.text(0.98, 0.5, info_text,
                 horizontalalignment='right',
                 verticalalignment='center',
                 transform=plt.gca().transAxes,
-                bbox=dict(facecolor='#333333', alpha=0.75, boxstyle='round,pad=0.7', edgecolor='#666666'),
+                bbox=dict(facecolor='#ffffff', alpha=0.88, boxstyle='round,pad=0.7', edgecolor='#d7dfdb'),
                 fontsize=14,  # 进一步增大字体
                 family='monospace',
                 weight='bold',
@@ -645,7 +647,7 @@ class PlayerPositionVisualizer:
     
     def _generate_scatter_plot(self, upper_df, lower_df, filename):
         """Generate scatter plot"""
-        plt.figure(figsize=(10, 16), facecolor='#1a1a1a')  # 设置深色背景
+        plt.figure(figsize=(10, 16), facecolor='#f8fbf8')  # 设置深色背景
         
         # Create court background
         self._draw_court()
@@ -719,11 +721,11 @@ class PlayerPositionVisualizer:
         # Set plot properties - 适合深色背景的样式
         plt.xlim(0, self.court_width)
         plt.ylim(self.court_length, 0)  # Invert Y axis for correct orientation
-        plt.title('Player Position Scatter Plot', color='white', fontsize=14)
-        plt.xlabel('Court Width (meters)', color='white')
-        plt.ylabel('Court Length (meters)', color='white')
-        plt.tick_params(colors='white')  # 坐标轴刻度标签改为白色
-        plt.legend(loc='upper right', facecolor='#333333', edgecolor='#666666', labelcolor='white')
+        plt.title('Player Position Scatter Plot', color='#101614', fontsize=14)
+        plt.xlabel('Court Width (meters)', color='#33443d')
+        plt.ylabel('Court Length (meters)', color='#33443d')
+        plt.tick_params(colors='#33443d')  # 坐标轴刻度标签改为白色
+        plt.legend(loc='upper right', facecolor='#ffffff', edgecolor='#d7dfdb', labelcolor='#101614')
         
         # Save plot
         save_path = os.path.join(self.output_dir, 'scatter_plots', filename)
@@ -751,7 +753,7 @@ class PlayerPositionVisualizer:
             return False
             
             
-def analyze_player_positions(detections_path, output_dir=None, fps=30):
+def analyze_player_positions(detections_path, output_dir=None, fps=30, include_summary=False):
     """
     Analyze player position data and generate visualizations
     
@@ -775,7 +777,20 @@ def analyze_player_positions(detections_path, output_dir=None, fps=30):
     else:
         print("Player position analysis failed")
         
-    return success
+    if not include_summary:
+        return success
+
+    artifacts = {
+        "match_heatmap": os.path.join(visualizer.output_dir, "heatmaps", "match_heatmap.png"),
+        "match_scatter": os.path.join(visualizer.output_dir, "scatter_plots", "match_scatter.png"),
+    }
+    artifacts = {key: value for key, value in artifacts.items() if os.path.exists(value)}
+    return {
+        "success": success,
+        "output_dir": visualizer.output_dir,
+        "movement_stats": dict(visualizer.movement_stats),
+        "artifacts": artifacts,
+    }
 
 
 # 测试代码：允许直接运行该文件来测试可视化效果

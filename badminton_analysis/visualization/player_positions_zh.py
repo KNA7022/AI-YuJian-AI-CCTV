@@ -3,6 +3,8 @@ import json
 import numpy as np
 import pandas as pd
 import os
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.colors import LinearSegmentedColormap
@@ -10,8 +12,7 @@ import seaborn as sns
 from collections import defaultdict
 import matplotlib.font_manager as fm
 
-# 设置全局绘图风格为深色
-plt.style.use('dark_background')
+plt.style.use('default')
 
 # 设置中文字体 - 使用simhei.ttf
 def _load_chinese_font():
@@ -23,12 +24,21 @@ def _load_chinese_font():
         os.path.join(package_root, 'simhei.ttf'),
         os.path.join(workspace_root, 'simhei.ttf'),
         os.path.join(os.getcwd(), 'simhei.ttf'),
+        '/System/Library/Fonts/Hiragino Sans GB.ttc',
+        '/System/Library/Fonts/Supplemental/Arial Unicode.ttf',
+        '/System/Library/Fonts/Supplemental/Songti.ttc',
+        '/Library/Fonts/Arial Unicode.ttf',
     ]
 
     for font_path in candidates:
         if os.path.exists(font_path):
+            try:
+                fm.fontManager.addfont(font_path)
+                font_name = fm.FontProperties(fname=font_path).get_name()
+            except Exception:
+                font_name = 'sans-serif'
             plt.rcParams['font.family'] = ['sans-serif']
-            plt.rcParams['font.sans-serif'] = ['SimHei']
+            plt.rcParams['font.sans-serif'] = [font_name]
             plt.rcParams['axes.unicode_minus'] = False
             return fm.FontProperties(fname=font_path)
 
@@ -85,12 +95,10 @@ class PlayerPositionVisualizer:
         # Heatmap grid parameters
         self.heatmap_grid_size = (30, 60)  # Grid size (width grid count, length grid count)
         
-        # Color settings - 调整为在深色背景中更醒目的颜色
-        self.upper_color = '#ff6363'  # Upper court player color (亮红色，在深色背景中更醒目)
-        self.lower_color = '#63c6ff'  # Lower court player color (亮蓝色，在深色背景中更醒目)
+        self.upper_color = '#d94b4b'
+        self.lower_color = '#1f76b4'
         
-        # 场地线条颜色 - 深色主题
-        self.court_line_color = '#bbbbbb'  # 浅灰色，在深色背景中清晰可见
+        self.court_line_color = '#33443d'
         
     def _calculate_movement_stats(self, upper_df, lower_df, rally_segments, frames):
         """计算每个回合的运动员统计数据（平均速度，最大速度，总移动距离）"""
@@ -406,11 +414,10 @@ class PlayerPositionVisualizer:
         
     def _draw_court(self, ax=None):
         """在matplotlib图形上绘制标准羽毛球场地"""
-        if ax is not None:
-            plt.sca(ax)
+        axis = ax if ax is not None else plt.gca()
         
         # 关键：反转Y轴以匹配真实球场方向（0在顶部，13.4在底部）
-        plt.gca().invert_yaxis()
+        axis.invert_yaxis()
         
         # 标准羽毛球场地尺寸（米）
         doubles_width = self.court_width  # 双打场地宽度 (6.10米)
@@ -422,32 +429,32 @@ class PlayerPositionVisualizer:
         # 绘制场地外框（双打场地外框）
         court_rect = plt.Rectangle((0, 0), doubles_width, court_length, 
                                  fill=False, color=self.court_line_color, linewidth=4)
-        plt.gca().add_patch(court_rect)
+        axis.add_patch(court_rect)
         
         # 绘制单打线
-        plt.plot([single_width, single_width], [0, court_length], self.court_line_color, linewidth=4)
-        plt.plot([doubles_width - single_width, doubles_width - single_width], 
+        axis.plot([single_width, single_width], [0, court_length], self.court_line_color, linewidth=4)
+        axis.plot([doubles_width - single_width, doubles_width - single_width], 
                  [0, court_length], self.court_line_color, linewidth=4)
         
         # 绘制网线（中间在y=场地长度/2）
-        plt.axhline(y=court_length/2, color=self.court_line_color, linestyle='--', linewidth=4)
+        axis.axhline(y=court_length/2, color=self.court_line_color, linestyle='--', linewidth=4)
         
         # 绘制中线（只画到发球线）
-        plt.plot([doubles_width/2, doubles_width/2], [0, court_length/2-service_line], self.court_line_color, linewidth=4)  # 上半场
-        plt.plot([doubles_width/2, doubles_width/2], [court_length/2+service_line, court_length], self.court_line_color, linewidth=4)  # 下半场
+        axis.plot([doubles_width/2, doubles_width/2], [0, court_length/2-service_line], self.court_line_color, linewidth=4)  # 上半场
+        axis.plot([doubles_width/2, doubles_width/2], [court_length/2+service_line, court_length], self.court_line_color, linewidth=4)  # 下半场
         
         # 绘制发球线
         # 前发球线（距网1.98米）
-        plt.axhline(y=court_length/2-service_line, color=self.court_line_color, linestyle='-', linewidth=4)
-        plt.axhline(y=court_length/2+service_line, color=self.court_line_color, linestyle='-', linewidth=4)
+        axis.axhline(y=court_length/2-service_line, color=self.court_line_color, linestyle='-', linewidth=4)
+        axis.axhline(y=court_length/2+service_line, color=self.court_line_color, linestyle='-', linewidth=4)
         
         # 后发球线（距底线0.76米）
-        plt.axhline(y=back_service, color=self.court_line_color, linestyle='-', linewidth=4)
-        plt.axhline(y=court_length-back_service, color=self.court_line_color, linestyle='-', linewidth=4)
+        axis.axhline(y=back_service, color=self.court_line_color, linestyle='-', linewidth=4)
+        axis.axhline(y=court_length-back_service, color=self.court_line_color, linestyle='-', linewidth=4)
         
         # 设置显示范围（带边距）
-        plt.xlim(-0.5, doubles_width + 0.5)
-        plt.ylim(court_length + 0.5, -0.5)  # 注意：Y轴范围是反向的
+        axis.set_xlim(-0.5, doubles_width + 0.5)
+        axis.set_ylim(court_length + 0.5, -0.5)  # 注意：Y轴范围是反向的
         
     def _court_to_image_coords(self, court_x, court_y):
         """Convert court coordinates to image coordinates"""
@@ -508,14 +515,18 @@ class PlayerPositionVisualizer:
             
     def _generate_heatmap(self, upper_df, lower_df, filename):
         """Generate heatmap"""
-        plt.figure(figsize=(10, 16), facecolor='#1a1a1a')  # 设置深色背景
+        fig = plt.figure(figsize=(14, 8), facecolor='#fbfcfa')
+        grid = fig.add_gridspec(1, 2, width_ratios=[1.25, 0.75], wspace=0.08)
+        ax = fig.add_subplot(grid[0, 0])
+        stats_ax = fig.add_subplot(grid[0, 1])
+        ax.set_facecolor('#ffffff')
+        stats_ax.set_facecolor('#fbfcfa')
         
-        # 在深色背景中创建更好的颜色映射 - 从透明到鲜明的颜色
-        upper_cmap = LinearSegmentedColormap.from_list("upper_cmap", [(0, 0, 0, 0), self.upper_color])
-        lower_cmap = LinearSegmentedColormap.from_list("lower_cmap", [(0, 0, 0, 0), self.lower_color])
+        upper_cmap = LinearSegmentedColormap.from_list("upper_cmap", [(1, 1, 1, 0), '#ffe1dd', self.upper_color])
+        lower_cmap = LinearSegmentedColormap.from_list("lower_cmap", [(1, 1, 1, 0), '#dbeafe', self.lower_color])
         
         # Create court background
-        self._draw_court()
+        self._draw_court(ax)
         
         # Draw upper court heatmap if data available
         if not upper_df.empty:
@@ -524,10 +535,11 @@ class PlayerPositionVisualizer:
                 y=upper_df['court_y'],
                 cmap=upper_cmap,
                 fill=True,
-                alpha=1,           # 最大不透明度
-                levels=12,        # 减少等高线数量，增加对比度
-                thresh=0.01,      # 降低阈值，显示更多低密度区域
-                bw_adjust=1     # 进一步减小带宽，使峰值更突出
+                alpha=0.78,
+                levels=10,
+                thresh=0.03,
+                bw_adjust=0.9,
+                ax=ax
             )
         
         # Draw lower court heatmap if data available
@@ -537,10 +549,11 @@ class PlayerPositionVisualizer:
                 y=lower_df['court_y'],
                 cmap=lower_cmap,
                 fill=True,
-                alpha=1,           # 最大不透明度
-                levels=12,        # 减少等高线数量，增加对比度
-                thresh=0.01,      # 降低阈值，显示更多低密度区域
-                bw_adjust=1     # 进一步减小带宽，使峰值更突出
+                alpha=0.78,
+                levels=10,
+                thresh=0.03,
+                bw_adjust=0.9,
+                ax=ax
             )
         
         # 添加统计信息
@@ -552,22 +565,22 @@ class PlayerPositionVisualizer:
         
         # 显示单个回合的统计或者整体统计
         if rally_id and rally_id in self.movement_stats:
-            self._add_stats_to_plot(rally_id)
+            self._add_stats_to_plot(rally_id, stats_ax)
         else:
             # 如果是整场比赛数据，显示所有回合的总统计
-            self._add_stats_to_plot(None)
+            self._add_stats_to_plot(None, stats_ax)
         
-        # Set plot properties - 适合深色背景的样式
-        plt.xlim(0, self.court_width)
-        plt.ylim(self.court_length, 0)  # Invert Y axis for correct orientation
-        plt.title('球员位置热力图', color='white', fontsize=14, fontproperties=chinese_font)
-        plt.xlabel('场地宽度 (米)', color='white', fontproperties=chinese_font)
-        plt.ylabel('场地长度 (米)', color='white', fontproperties=chinese_font)
-        plt.tick_params(colors='white')  # 坐标轴刻度标签改为白色
+        ax.set_xlim(0, self.court_width)
+        ax.set_ylim(self.court_length, 0)
+        ax.set_title('球员位置热力图', color='#101614', fontsize=18, fontweight='bold', pad=14, fontproperties=chinese_font)
+        ax.set_xlabel('场地宽度 (米)', color='#33443d', fontproperties=chinese_font)
+        ax.set_ylabel('场地长度 (米)', color='#33443d', fontproperties=chinese_font)
+        ax.tick_params(colors='#33443d')
+        ax.set_aspect('equal', adjustable='box')
         
         # Save plot
         save_path = os.path.join(self.output_dir, 'heatmaps', filename)
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        fig.savefig(save_path, dpi=180, bbox_inches='tight', facecolor=fig.get_facecolor())
         plt.close()
         
         print(f"热力图已保存至: {save_path}")
@@ -575,7 +588,7 @@ class PlayerPositionVisualizer:
     # 注意：这个方法被新的_calculate_player_stats(self, positions, times)方法替代
     # 保留此方法是为了兼容性，但不再使用
             
-    def _add_stats_to_plot(self, rally_id=None):
+    def _add_stats_to_plot(self, rally_id=None, ax=None):
         """
         在图表上添加统计信息
         Args:
@@ -593,7 +606,7 @@ class PlayerPositionVisualizer:
             # 单个回合的统计信息
             stats = self.movement_stats[rally_id]
             info_text = f"回合 {rally_id} 统计:\n"
-            info_text += "---------------\n"
+            info_text += "\n"
             
             # 上场球员统计
             if 'upper' in stats:
@@ -613,7 +626,7 @@ class PlayerPositionVisualizer:
         else:
             # 整场比赛的统计信息
             info_text = f"比赛统计\n"
-            info_text += "=================\n"
+            info_text += "\n"
             
             # 计算所有回合的总统计数据
             upper_distances = []
@@ -662,24 +675,57 @@ class PlayerPositionVisualizer:
             if lower_speeds:
                 info_text += f"  最大速度: {max(lower_speeds):.2f} 米/秒\n"
         
-        # 在图表中心右侧添加文本框，适合深色背景
+        if ax is not None:
+            ax.axis('off')
+            ax.text(
+                0.04,
+                0.92,
+                "移动统计",
+                transform=ax.transAxes,
+                fontsize=20,
+                weight='bold',
+                color='#101614',
+                fontproperties=chinese_font,
+            )
+            ax.text(
+                0.04,
+                0.82,
+                info_text,
+                transform=ax.transAxes,
+                va='top',
+                ha='left',
+                bbox=dict(facecolor='#ffffff', alpha=0.96, boxstyle='round,pad=0.9', edgecolor='#d7dfdb'),
+                fontsize=13,
+                linespacing=1.45,
+                color='#101614',
+                fontproperties=chinese_font,
+            )
+            ax.scatter([0.08, 0.08], [0.2, 0.13], s=120, c=[self.upper_color, self.lower_color], transform=ax.transAxes)
+            ax.text(0.15, 0.2, "上场球员", transform=ax.transAxes, va='center', fontsize=12, color='#33443d', fontproperties=chinese_font)
+            ax.text(0.15, 0.13, "下场球员", transform=ax.transAxes, va='center', fontsize=12, color='#33443d', fontproperties=chinese_font)
+            return
+
         plt.text(0.98, 0.5, info_text,
                 horizontalalignment='right',
                 verticalalignment='center',
                 transform=plt.gca().transAxes,
-                bbox=dict(facecolor='#333333', alpha=0.75, boxstyle='round,pad=0.7', edgecolor='#666666'),
-                fontsize=14,  # 进一步增大字体
-                family='SimHei',
+                bbox=dict(facecolor='#ffffff', alpha=0.88, boxstyle='round,pad=0.7', edgecolor='#d7dfdb'),
+                fontsize=14,
                 weight='bold',
-                color='#ffffff',
-                fontproperties=chinese_font)  # 白色文本适合深色背景
+                color='#101614',
+                fontproperties=chinese_font)
     
     def _generate_scatter_plot(self, upper_df, lower_df, filename):
         """Generate scatter plot"""
-        plt.figure(figsize=(10, 16), facecolor='#1a1a1a')  # 设置深色背景
+        fig = plt.figure(figsize=(14, 8), facecolor='#fbfcfa')
+        grid = fig.add_gridspec(1, 2, width_ratios=[1.25, 0.75], wspace=0.08)
+        ax = fig.add_subplot(grid[0, 0])
+        stats_ax = fig.add_subplot(grid[0, 1])
+        ax.set_facecolor('#ffffff')
+        stats_ax.set_facecolor('#fbfcfa')
         
         # Create court background
-        self._draw_court()
+        self._draw_court(ax)
         
         # Draw scatter plot for upper court
         if not upper_df.empty:
@@ -687,21 +733,21 @@ class PlayerPositionVisualizer:
             if 'rally_id' in upper_df.columns:
                 # Group by rally and plot with different colors
                 for rally_id, rally_data in upper_df.groupby('rally_id'):
-                    plt.scatter(
+                    ax.scatter(
                         rally_data['court_x'], 
                         rally_data['court_y'],
-                        alpha=0.7,
-                        s=30,
+                        alpha=0.58,
+                        s=26,
                         marker='o',  # circle marker
                         color=self.upper_color,
                         label=f'上场球员 回合 {int(rally_id)}' if rally_id == upper_df['rally_id'].iloc[0] else "_nolegend_"
                     )
             else:
-                plt.scatter(
+                ax.scatter(
                     upper_df['court_x'], 
                     upper_df['court_y'],
-                    alpha=0.7,
-                    s=30,
+                    alpha=0.58,
+                    s=26,
                     marker='o',
                     color=self.upper_color,
                     label='上场球员'
@@ -713,21 +759,21 @@ class PlayerPositionVisualizer:
             if 'rally_id' in lower_df.columns:
                 # Group by rally and plot with different colors
                 for rally_id, rally_data in lower_df.groupby('rally_id'):
-                    plt.scatter(
+                    ax.scatter(
                         rally_data['court_x'], 
                         rally_data['court_y'],
-                        alpha=0.7,
-                        s=30,
+                        alpha=0.58,
+                        s=28,
                         marker='^',  # triangle marker
                         color=self.lower_color,
                         label=f'下场球员 回合 {int(rally_id)}' if rally_id == lower_df['rally_id'].iloc[0] else "_nolegend_"
                     )
             else:
-                plt.scatter(
+                ax.scatter(
                     lower_df['court_x'], 
                     lower_df['court_y'],
-                    alpha=0.7,
-                    s=30,
+                    alpha=0.58,
+                    s=28,
                     marker='^',  # triangle marker
                     color=self.lower_color,
                     label='下场球员'
@@ -742,23 +788,22 @@ class PlayerPositionVisualizer:
         
         # 显示单个回合的统计或者整体统计
         if rally_id and rally_id in self.movement_stats:
-            self._add_stats_to_plot(rally_id)
+            self._add_stats_to_plot(rally_id, stats_ax)
         else:
             # 如果是整场比赛数据，显示所有回合的总统计
-            self._add_stats_to_plot(None)
+            self._add_stats_to_plot(None, stats_ax)
         
-        # Set plot properties - 适合深色背景的样式
-        plt.xlim(0, self.court_width)
-        plt.ylim(self.court_length, 0)  # Invert Y axis for correct orientation
-        plt.title('球员位置散点图', color='white', fontsize=14, fontproperties=chinese_font)
-        plt.xlabel('场地宽度 (米)', color='white', fontproperties=chinese_font)
-        plt.ylabel('场地长度 (米)', color='white', fontproperties=chinese_font)
-        plt.tick_params(colors='white')  # 坐标轴刻度标签改为白色
-        plt.legend(loc='upper right', facecolor='#333333', edgecolor='#666666', labelcolor='white')
+        ax.set_xlim(0, self.court_width)
+        ax.set_ylim(self.court_length, 0)
+        ax.set_title('球员位置散点图', color='#101614', fontsize=18, fontweight='bold', pad=14, fontproperties=chinese_font)
+        ax.set_xlabel('场地宽度 (米)', color='#33443d', fontproperties=chinese_font)
+        ax.set_ylabel('场地长度 (米)', color='#33443d', fontproperties=chinese_font)
+        ax.tick_params(colors='#33443d')
+        ax.set_aspect('equal', adjustable='box')
         
         # Save plot
         save_path = os.path.join(self.output_dir, 'scatter_plots', filename)
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        fig.savefig(save_path, dpi=180, bbox_inches='tight', facecolor=fig.get_facecolor())
         plt.close()
         
         print(f"散点图已保存至: {save_path}")
@@ -782,7 +827,7 @@ class PlayerPositionVisualizer:
             return False
             
             
-def analyze_player_positions(detections_path, output_dir=None, fps=30):
+def analyze_player_positions(detections_path, output_dir=None, fps=30, include_summary=False):
     """
     Analyze player position data and generate visualizations
     
@@ -806,7 +851,20 @@ def analyze_player_positions(detections_path, output_dir=None, fps=30):
     else:
         print("球员位置分析失败")
         
-    return success
+    if not include_summary:
+        return success
+
+    artifacts = {
+        "match_heatmap": os.path.join(visualizer.output_dir, "heatmaps", "match_heatmap.png"),
+        "match_scatter": os.path.join(visualizer.output_dir, "scatter_plots", "match_scatter.png"),
+    }
+    artifacts = {key: value for key, value in artifacts.items() if os.path.exists(value)}
+    return {
+        "success": success,
+        "output_dir": visualizer.output_dir,
+        "movement_stats": dict(visualizer.movement_stats),
+        "artifacts": artifacts,
+    }
 
 
 # 测试代码：允许直接运行该文件来测试可视化效果

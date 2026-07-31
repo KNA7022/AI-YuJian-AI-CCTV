@@ -1,7 +1,6 @@
-﻿import os
+﻿import json
+import os
 import tempfile
-from tkinter import filedialog
-import tkinter as tk
 import time
 import argparse
 
@@ -28,7 +27,10 @@ def load_runtime_dependencies():
         from .detection.shuttlecock import ShuttlecockTracker as _ShuttlecockTracker
         from .visualization.player_pose import PlayerPoseVisualizer as _PlayerPoseVisualizer
         from .visualization.stats import StatsVisualizer as _StatsVisualizer
-        from .detection.rtmpose import RTMPoseProcessor as _RTMPoseProcessor
+        try:
+            from .detection.rtmpose import RTMPoseProcessor as _RTMPoseProcessor
+        except ModuleNotFoundError:
+            _RTMPoseProcessor = None
         from .detection.yolo_pose import YOLOPoseProcessor as _YOLOPoseProcessor
         from .media import video_audio as _vap
         from .data.writer import JsonlDetectionWriter as _JsonlDetectionWriter
@@ -91,18 +93,26 @@ class BadmintonAnalysisSystem:
                 f"Input video not found: {self.video_path}\n"
                 "Pass a valid video file with --video-path."
             )
-        if not os.path.exists(self.ball_model_path):
-            raise FileNotFoundError(
-                f"Ball detection model not found: {self.ball_model_path}\n"
-                "Download or train a YOLO shuttlecock model and place it at "
-                "weights/yolo11s-ball.pt, or pass its path with --ball-model."
-            )
+        self.ball_model_available = os.path.exists(self.ball_model_path)
         
         if self.pose_family == 'yolo-pose':
             self.rtmpose_processor = YOLOPoseProcessor(model_path=self.yolo_pose_model)
         else:
+            if RTMPoseProcessor is None:
+                raise RuntimeError(
+                    "RTMPose / RTMO dependencies are not available. "
+                    "Install rtmlib and onnxruntime, or use --pose-family yolo-pose."
+                )
             self.rtmpose_processor = RTMPoseProcessor(mode=self.pose_mode, pose_family=self.pose_family)
-        self.yolo_ball_model = YOLO(self.ball_model_path)
+        if self.ball_model_available:
+            self.yolo_ball_model = YOLO(self.ball_model_path)
+        else:
+            print(
+                f"Warning: Ball detection model not found: {self.ball_model_path}. "
+                "Continuing without shuttlecock detection."
+            )
+            self.yolo_ball_model = None
+            self.show_shuttlecock_trajectory = False
 
         self.last_stats_update_frame = 0
 
@@ -158,6 +168,10 @@ class BadmintonAnalysisSystem:
 
         self.frame_width = 0
         self.frame_height = 0
+        self.calibration_path = None
+        self.progress_callback = None
+        self.cancel_callback = None
+
     def process_video(self):
         """Process the input video."""
         self.start_time = time.time()
@@ -176,6 +190,7 @@ class BadmintonAnalysisSystem:
         self.fps = fps
         
 
+        self._emit_progress("loading_template", 8, "Loading template frame")
         template_path = self._get_template_path()
         template_gray, template_color = self._load_template(template_path, cap)
         
@@ -185,6 +200,7 @@ class BadmintonAnalysisSystem:
         out = self._setup_video_writer(self.frame_width, self.frame_height, fps)
 
 
+        self._emit_progress("loading_calibration", 12, "Loading calibration")
         corners, roi_corners, mid_height = self._setup_court_annotation(template_color)
         self.court_corners = corners
         self.court_roi_corners = roi_corners
@@ -210,10 +226,15 @@ class BadmintonAnalysisSystem:
 
 
         while cap.isOpened():
+            if self._should_cancel():
+                raise RuntimeError("Analysis cancelled")
             ret, frame = cap.read()
             if not ret:
                 break
             frame_count += 1
+            if total_frames > 0 and frame_count % max(1, total_frames // 30 or 1) == 0:
+                progress = min(80, 15 + int(frame_count / total_frames * 65))
+                self._emit_progress("processing", progress, f"Processing frame {frame_count}/{total_frames}")
             frame, detect_frame_count = self._process_frame(frame, template_gray, corners, roi_corners, frame_count, out, detect_frame_count)
 
         self.end_time = time.time()
@@ -225,6 +246,17 @@ class BadmintonAnalysisSystem:
         print(f"处理速度比: {processing_time/video_duration:.2f}x")
         
         self._cleanup(cap)
+
+    def _emit_progress(self, stage, progress, message):
+        if callable(self.progress_callback):
+            self.progress_callback({
+                "stage": stage,
+                "progress": progress,
+                "message": message,
+            })
+
+    def _should_cancel(self):
+        return callable(self.cancel_callback) and self.cancel_callback()
 
     def _write_metadata(self, fps, total_frames, video_duration, template_path, corners, roi_corners, mid_height):
         metadata = {
@@ -239,7 +271,7 @@ class BadmintonAnalysisSystem:
                 "height": int(self.frame_height),
             },
             "models": {
-                "shuttlecock": self.ball_model_path,
+                "shuttlecock": self.ball_model_path if self.ball_model_available else None,
             },
             "court": {
                 "template_path": template_path,
@@ -256,6 +288,7 @@ class BadmintonAnalysisSystem:
                 "video": self.output_video_path,
                 "detections": self.detections_path,
             },
+            "warnings": [] if self.ball_model_available else ["Shuttlecock model missing; shuttlecock detection disabled."],
         }
         write_json(self.metadata_path, metadata)
 
@@ -366,6 +399,8 @@ class BadmintonAnalysisSystem:
             return self.template_path
 
         try:
+            from tkinter import filedialog
+            import tkinter as tk
             root = tk.Tk()
             root.withdraw()
             template_path = filedialog.askopenfilename(
@@ -417,6 +452,14 @@ class BadmintonAnalysisSystem:
 
     def _setup_court_annotation(self, template_color):
         """Set up court annotation."""
+        if self.calibration_path and os.path.exists(self.calibration_path):
+            with open(self.calibration_path, "r", encoding="utf-8") as file:
+                calibration = json.load(file)
+            corners = calibration.get("corners")
+            roi_corners = compute_expanded_roi(corners, template_color.shape)
+            court_mapper = CourtMapper(corners)
+            _overlay, mid_height = court_mapper.draw_court_overlay(template_color.copy())
+            return corners, roi_corners, mid_height
 
         if os.path.exists(os.path.join(self.save_dir, 'court_annotations.txt')):
             with open(os.path.join(self.save_dir, 'court_annotations.txt'), 'r') as f:

@@ -49,6 +49,10 @@ class ShuttlecockTracker:
             self.ultra_device = "cpu"
 
     def detect_ball(self, frame, conf=0.18, roi_corners=None):
+        if self.yolo_ball_model is None:
+            self.last_candidate = None
+            self.last_detection = self._empty_detection_state()
+            return [0, 0]
         t0 = time.time()
         try:
             ball_results = self.yolo_ball_model(frame, conf=conf, device=self.ultra_device, verbose=False)[0]
