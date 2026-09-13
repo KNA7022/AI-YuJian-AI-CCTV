@@ -2,12 +2,16 @@ import json
 import os
 import shutil
 import uuid
+import base64
+import hmac
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import FRONTEND_DIST_DIR, JOBS_DIR, RESULTS_DIR, STORAGE_DIR, UPLOADS_DIR
 from .db import init_db
@@ -20,12 +24,38 @@ from .jobs import (
 from .models import CalibrationPayload, JobConfig, StartJobResponse, SystemHealth
 from .repository import create_job, delete_job_records, get_job, list_artifacts, list_jobs, update_job
 from .video_utils import disk_free_bytes, extract_frame, ffmpeg_available, is_video_file, probe_video, trim_video
+from .live_api import router as live_router, manager as live_manager
+from .live_store import init_live_db, recover_sessions
 
 
 app = FastAPI(title="Good Badminton Web Demo")
+app.include_router(live_router)
+
+
+@app.middleware("http")
+async def operator_access(request, call_next):
+    password = os.environ.get("YUJIAN_PASSWORD")
+    if password:
+        try:
+            scheme, value = request.headers.get("authorization", "").split(" ", 1)
+            credentials = base64.b64decode(value, validate=True).decode("utf-8")
+            valid = scheme.lower() == "basic" and hmac.compare_digest(credentials.encode(), ("operator:" + password).encode())
+        except (ValueError, UnicodeError):
+            valid = False
+        if not valid:
+            return JSONResponse({"detail": "请使用 operator 账号登录。"}, status_code=401,
+                                headers={"WWW-Authenticate": 'Basic realm="YuJian", charset="UTF-8"'})
+    return await call_next(request)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request, exc):
+    # Pydantic's default error includes submitted inputs, including camera secrets.
+    messages = [f"{'.'.join(str(part) for part in error['loc'])}: {error['msg']}" for error in exc.errors()]
+    return JSONResponse(status_code=422, content={"detail": "；".join(messages)})
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=os.environ.get("YUJIAN_ALLOWED_ORIGINS", "http://127.0.0.1:5173,http://localhost:5173").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -35,10 +65,18 @@ app.add_middleware(
 @app.on_event("startup")
 async def on_startup():
     init_db()
-    job_manager.start()
+    init_live_db()
+    recover_sessions()
     for job in list_jobs():
         if job.status == "running":
             update_job(job.id, status="failed", error_message="Marked failed after restart")
+    job_manager.start()
+
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    import asyncio
+    await asyncio.to_thread(live_manager.shutdown)
 
 
 def _parse_bool(value: str, default: bool = True) -> bool:
@@ -295,4 +333,13 @@ app.mount("/storage", StaticFiles(directory=STORAGE_DIR), name="storage")
 app.mount("/results", StaticFiles(directory=RESULTS_DIR), name="results")
 
 if FRONTEND_DIST_DIR.exists():
-    app.mount("/", StaticFiles(directory=FRONTEND_DIST_DIR, html=True), name="frontend")
+    class FrontendFiles(StaticFiles):
+        async def get_response(self, path, scope):
+            try:
+                return await super().get_response(path, scope)
+            except StarletteHTTPException as exc:
+                if exc.status_code == 404 and (path in {"live", "history"} or path.startswith("jobs/")):
+                    return await super().get_response("index.html", scope)
+                raise
+
+    app.mount("/", FrontendFiles(directory=FRONTEND_DIST_DIR, html=True), name="frontend")

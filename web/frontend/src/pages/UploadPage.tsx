@@ -8,7 +8,7 @@ const defaultConfig: JobConfig = {
   language: "zh",
   pose_family: "yolo-pose",
   pose_mode: "balanced",
-  yolo_pose_model: "yolo11n-pose.pt",
+  yolo_pose_model: "weights/yolo11n-pose.pt",
   keep_audio: true,
   visualize_positions: true,
   ball_model_path: "weights/yolo11s-ball.pt",

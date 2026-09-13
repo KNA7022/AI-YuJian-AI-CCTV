@@ -17,6 +17,9 @@ export function Layout({ children }: LayoutProps) {
           </span>
         </Link>
         <nav className="nav">
+          <NavLink to="/live" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
+            球场直播
+          </NavLink>
           <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
             上传分析
           </NavLink>

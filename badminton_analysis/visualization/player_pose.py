@@ -14,6 +14,8 @@ class PlayerPoseVisualizer:
         show_player_trajectories=True,
         show_performance_stats=False,
         court_filter_margin=0.75,
+        foot_offset_pixels=10,
+        min_foot_confidence=0.0,
     ):
         if rtmpose_processor is None:
             raise RuntimeError("A pose processor instance must be provided to PlayerPoseVisualizer.")
@@ -24,6 +26,8 @@ class PlayerPoseVisualizer:
         self.current_pose_data = None
         self.court_mapper = None
         self.court_filter_margin = court_filter_margin
+        self.foot_offset_pixels = foot_offset_pixels
+        self.min_foot_confidence = min_foot_confidence
 
         self.skeleton_connections = [
             (5, 6),
@@ -59,10 +63,15 @@ class PlayerPoseVisualizer:
         filtered_people = []
         active_court_mapper = court_mapper or self.court_mapper
 
-        for kp in persons:
+        for person_index, kp in enumerate(persons):
             kp_arr = np.asarray(kp)
             if kp_arr.ndim != 2 or kp_arr.shape[0] < 17 or kp_arr.shape[1] < 2:
                 continue
+            if _confidence_scores is not None and self.min_foot_confidence > 0:
+                scores = np.asarray(_confidence_scores)
+                if scores.ndim == 2 and person_index < len(scores) and scores.shape[1] >= 17:
+                    if min(scores[person_index, 15], scores[person_index, 16]) < self.min_foot_confidence:
+                        continue
 
             lf = kp_arr[15]
             rf = kp_arr[16]
@@ -71,7 +80,7 @@ class PlayerPoseVisualizer:
 
             mid_point = (
                 (float(lf[0] + x1) + float(rf[0] + x1)) / 2,
-                (float(lf[1] + y1) + float(rf[1] + y1)) / 2 + 10,
+                (float(lf[1] + y1) + float(rf[1] + y1)) / 2 + self.foot_offset_pixels,
             )
             if not self._is_on_court(mid_point, active_court_mapper):
                 continue

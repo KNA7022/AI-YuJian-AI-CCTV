@@ -78,7 +78,7 @@ pip install -r requirements.txt
 
 ### Prepare model weights
 
-Shuttlecock weights are not committed to the repository. Download them from [GitHub Releases](https://github.com/lzylovec/lzylovec-AI-YuJian-AI/releases) and place them at:
+Shuttlecock weights are not committed to the repository. Download them from the original project's [Good-Badminton v0.1.0 release](https://github.com/yo-WASSUP/Good-Badminton/releases/tag/v0.1.0) and place them at:
 
 ```text
 weights/yolo11s-ball.pt

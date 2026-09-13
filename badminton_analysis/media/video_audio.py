@@ -6,6 +6,7 @@ import time
 
 import cv2
 from moviepy.editor import VideoFileClip
+from .binaries import ffmpeg_binary
 
 
 def has_audio_track(video_path):
@@ -58,7 +59,7 @@ def process_video_with_audio(video_path, temp_video_path, output_path, save_dir)
         try:
             subprocess.call(
                 [
-                    "ffmpeg",
+                    ffmpeg_binary() or "ffmpeg",
                     "-y",
                     "-i",
                     temp_video_path,
@@ -78,7 +79,7 @@ def process_video_with_audio(video_path, temp_video_path, output_path, save_dir)
 
         result = subprocess.run(
             [
-                "ffmpeg",
+                ffmpeg_binary() or "ffmpeg",
                 "-y",
                 "-i",
                 temp_for_audio,
@@ -129,7 +130,7 @@ def process_video_without_audio(temp_video_path, output_path):
 
         result = subprocess.run(
             [
-                "ffmpeg",
+                ffmpeg_binary() or "ffmpeg",
                 "-y",
                 "-i",
                 temp_video_path,

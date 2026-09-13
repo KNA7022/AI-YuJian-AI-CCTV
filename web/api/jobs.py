@@ -22,6 +22,7 @@ from .repository import (
     upsert_artifacts,
 )
 from .video_utils import extract_frame
+from .compute_slot import lock as compute_lock
 
 
 class JobManager:
@@ -56,10 +57,15 @@ class JobManager:
             queued_jobs = list_jobs_by_status("queued")
             if not queued_jobs:
                 return
+            if not compute_lock.acquire(blocking=False):
+                return
             job = queued_jobs[0]
             self._current_job_id = job.id
             self._cancel_flags[job.id] = False
-        await self._run_job(job.id)
+        try:
+            await self._run_job(job.id)
+        finally:
+            compute_lock.release()
 
     async def _publish(self, job_id: str, payload: dict):
         payload.setdefault("timestamp", datetime.utcnow().isoformat())

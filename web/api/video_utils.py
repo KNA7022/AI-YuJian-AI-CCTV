@@ -3,6 +3,7 @@ import subprocess
 from pathlib import Path
 
 import cv2
+from badminton_analysis.media.binaries import ffmpeg_binary
 
 
 def probe_video(video_path: str) -> dict:
@@ -50,7 +51,7 @@ def trim_video(input_path: str, output_path: str, start_sec: float, end_sec: flo
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     command = [
-        "ffmpeg",
+        ffmpeg_binary(),
         "-y",
         "-ss",
         f"{start_sec:.3f}",
@@ -86,7 +87,7 @@ def trim_video(input_path: str, output_path: str, start_sec: float, end_sec: flo
 
 
 def ffmpeg_available() -> bool:
-    return shutil.which("ffmpeg") is not None and shutil.which("ffprobe") is not None
+    return ffmpeg_binary() is not None
 
 
 def disk_free_bytes(path: str) -> int:

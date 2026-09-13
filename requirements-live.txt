@@ -1,0 +1,12 @@
+# Install PyTorch separately for the target GPU/CPU; see docs/live-deployment.md.
+opencv-python==4.10.0.84
+numpy>=1.26,<2
+ultralytics==8.3.40
+moviepy==1.0.3
+imageio-ffmpeg==0.6.0
+matplotlib>=3.5,<4
+pandas>=1.3,<3
+seaborn>=0.11,<1
+scipy>=1.7,<2
+scikit-learn>=1,<2
+-r web-requirements.txt

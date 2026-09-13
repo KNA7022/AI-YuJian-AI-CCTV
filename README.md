@@ -78,7 +78,7 @@ pip install -r requirements.txt
 
 ### 3. 准备模型
 
-羽毛球检测权重不会随仓库提交，请从 [GitHub Releases](https://github.com/lzylovec/lzylovec-AI-YuJian-AI/releases) 下载并放置到：
+羽毛球检测权重不会随仓库提交，请从原始项目 [Good-Badminton v0.1.0 Releases](https://github.com/yo-WASSUP/Good-Badminton/releases/tag/v0.1.0) 下载并放置到：
 
 ```text
 weights/yolo11s-ball.pt
@@ -118,6 +118,8 @@ python main.py --video-path videos/demo.mp4 --language en
 如果拍摄视角、裁切或模板发生变化，删除对应的 `court_annotations.txt` 后重新标定即可。
 
 ## 🖥️ Web Demo
+
+新增球场摄像头入口：`/live`。支持 RTSP 抓图、持久化四点标定、单打直播分析、手动回合边界、录像分片与历史结果。安装和使用见 [球场部署说明](docs/live-deployment.md)。当前版本需要现场标定；羽毛球专用权重缺失时应关闭该检测项，双打和自动判分尚未支持。
 
 Web Demo 是一个本地运行的可视化工作台：视频只写入本机的 `storage/`，分析结果写入本机的 `results/`，不依赖云端服务。
 

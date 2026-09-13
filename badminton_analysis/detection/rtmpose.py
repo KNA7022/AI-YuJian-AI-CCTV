@@ -45,7 +45,7 @@ class RTMPoseProcessor:
             models_dir = os.path.join(base_path, 'weights')
         else:
             # Development environment, model files are in project directory
-            models_dir = './weights'
+            models_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'weights'))
         
         return models_dir
     
