@@ -44,7 +44,12 @@ class LatestFrameSource:
 
         # Credentials may occur in native FFmpeg errors: suppress native logging.
         os.environ.setdefault("OPENCV_FFMPEG_CAPTURE_OPTIONS", "rtsp_transport;tcp")
-        cv2.setLogLevel(0)
+        # cv2.setLogLevel was removed in OpenCV 5.x, which would otherwise abort the
+        # reader thread before it ever connects; fall back to the legacy logger.
+        if hasattr(cv2, "setLogLevel"):
+            cv2.setLogLevel(0)
+        elif hasattr(cv2, "utils") and hasattr(cv2.utils, "logging"):
+            cv2.utils.logging.setLogLevel(cv2.utils.logging.LOG_LEVEL_SILENT)
         sequence = 0
         retry = 0
         while not self.stop.is_set():

@@ -13,6 +13,8 @@ env/
 .agents/
 web/frontend/node_modules/
 web/frontend/dist/
+.npm-cache/
+web/frontend/.npm-cache/
 
 # Local runtime storage (jobs, uploads, sqlite db) — never published
 storage/
